@@ -1,21 +1,33 @@
-{ fetchFromGitHub
-, buildDotnetModule
-, dotnetCorePackages
-}:
+{ lib, stdenv, fetchurl, makeWrapper, autoPatchelfHook, libz, gcc-unwrapped }:
 
-buildDotnetModule rec {
-    pname = "ImmichFrame";
-    version = "1.0.1.0";
+stdenv.mkDerivation rec {
+  pname = "ImmichFrame";
+  version = "1.0.1.0";
 
-    src = fetchFromGitHub {
-        owner = "3rob3";
-        repo = pname;
-        rev = "v${version}";
-        sha256 = "bYZYfwntp0pbLyYbZQ7G5gF8gUT4c2ctbIgv7xWlCq4=";
-    };
+  dontStrip = true;
 
-    projectFile = "ImmichFrame.Desktop/ImmichFrame.Desktop.csproj";
-    dotnet-sdk = dotnetCorePackages.sdk_7_0;
-    dotnet-runtime = dotnetCorePackages.runtime_7_0;
-    nugetDeps = ./deps.nix;
+  src = fetchurl {
+    url = "https://github.com/3rob3/ImmichFrame/releases/download/v${version}/ImmichFrame-v${version}-linux-x64.tar.gz";
+    hash = "sha256-2ZtUbKVkQdXNQAWk1kSf1+rYOUwzBXKQh9qrQ33zM0A=";
+  };
+
+  buildInputs = [
+    libz
+    gcc-unwrapped
+  ];
+
+  nativeBuildInputs = [ 
+    makeWrapper
+    autoPatchelfHook
+  ];
+
+  installPhase = ''
+    runHook preInstall
+
+    mkdir -p $out/bin
+    cp -r * $out/bin/
+    wrapProgram $out/bin/Immich_Frame --set DOTNET_SYSTEM_GLOBALIZATION_INVARIANT 1
+
+    runHook postInstall
+  '';
 }
